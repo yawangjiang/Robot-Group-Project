@@ -1,0 +1,5 @@
+initial_positions:
+  shoulder_joint: -0.35
+  elbow_joint: 0.70
+  left_finger_joint: 0.041
+  right_finger_joint: -0.041
