@@ -1,0 +1,8 @@
+path: E:/datasets/cup_mouse_300_mouse0_cup1_20260904
+train: images/train
+val: images/val
+test: images/test
+
+names:
+  0: mouse
+  1: cup
