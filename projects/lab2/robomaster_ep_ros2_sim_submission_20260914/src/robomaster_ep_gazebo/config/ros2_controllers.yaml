@@ -1,0 +1,46 @@
+controller_manager:
+  ros__parameters:
+    update_rate: 100
+    use_sim_time: true
+    # gz_ros2_control position interfaces implement a discrete proportional
+    # follower.  The upstream default (0.1) lagged short MoveIt trajectories
+    # enough to violate the arm path tolerance on this Jetson.
+    # Apply each sampled trajectory position directly.  A gain below 1.0 adds
+    # tracking lag and caused PATH_TOLERANCE_VIOLATED on the short pick move.
+    position_proportional_gain: 1.0
+    joint_state_broadcaster:
+      type: joint_state_broadcaster/JointStateBroadcaster
+    arm_controller:
+      type: joint_trajectory_controller/JointTrajectoryController
+    gripper_controller:
+      type: joint_trajectory_controller/JointTrajectoryController
+arm_controller:
+  ros__parameters:
+    joints: [shoulder_joint, elbow_joint]
+    command_interfaces: [position]
+    state_interfaces: [position, velocity]
+    state_publish_rate: 50.0
+    action_monitor_rate: 20.0
+    allow_partial_joints_goal: false
+    constraints:
+      stopped_velocity_tolerance: 0.05
+      # The long 1.65 rad folded approach is dynamically heavier than the old
+      # short motion.  Keep the strict endpoint tolerance, but allow the
+      # position interface enough time to settle instead of accepting offset.
+      goal_time: 3.0
+      # The simulated mechanism may transiently trail a sampled path by about
+      # 0.051 rad under load.  Keep a little path margin while retaining a
+      # strict 0.02 rad endpoint tolerance (also checked by the demo node).
+      shoulder_joint: {trajectory: 0.075, goal: 0.02}
+      elbow_joint: {trajectory: 0.075, goal: 0.02}
+gripper_controller:
+  ros__parameters:
+    joints: [left_finger_joint, right_finger_joint]
+    command_interfaces: [position]
+    state_interfaces: [position, velocity]
+    state_publish_rate: 50.0
+    action_monitor_rate: 20.0
+    constraints:
+      goal_time: 1.0
+      left_finger_joint: {trajectory: 0.01, goal: 0.003}
+      right_finger_joint: {trajectory: 0.01, goal: 0.003}

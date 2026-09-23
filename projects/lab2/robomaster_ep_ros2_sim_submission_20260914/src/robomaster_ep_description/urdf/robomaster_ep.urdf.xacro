@@ -1,0 +1,179 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="robomaster_ep_core">
+  <xacro:arg name="use_sim" default="false"/>
+  <xacro:arg name="use_fake_hardware" default="true"/>
+  <xacro:arg name="use_gazebo" default="false"/>
+  <xacro:arg name="use_mesh_collision" default="false"/>
+  <xacro:arg name="prefix" default=""/>
+  <xacro:arg name="initial_positions_file" default="$(find robomaster_ep_description)/config/initial_positions.yaml"/>
+  <xacro:arg name="controllers_file" default="$(find robomaster_ep_gazebo)/config/ros2_controllers.yaml"/>
+
+  <xacro:property name="p" value="$(arg prefix)"/>
+  <xacro:property name="link1_length" value="0.145"/>
+  <!-- Keep the rendered / collision forearm identical to the 240 mm length
+       used by pick_place.py.  The previous 135 mm link left the simulated
+       fingers 105 mm behind the deterministically attached cube. -->
+  <xacro:property name="link2_length" value="0.240"/>
+  <xacro:property name="arm_width" value="0.035"/>
+  <xacro:property name="finger_travel" value="0.041"/>
+
+  <material name="ep_white"><color rgba="0.92 0.95 0.98 1"/></material>
+  <material name="ep_navy"><color rgba="0.035 0.12 0.28 1"/></material>
+  <material name="ep_blue"><color rgba="0.00 0.55 1.00 1"/></material>
+  <material name="ep_cyan"><color rgba="0.00 0.90 0.92 1"/></material>
+  <material name="ep_orange"><color rgba="1.00 0.32 0.02 1"/></material>
+  <material name="ep_yellow"><color rgba="1.00 0.82 0.04 1"/></material>
+  <material name="ep_magenta"><color rgba="0.95 0.03 0.40 1"/></material>
+  <material name="ep_graphite"><color rgba="0.10 0.14 0.20 1"/></material>
+  <material name="ep_silver"><color rgba="0.62 0.69 0.76 1"/></material>
+
+  <!-- Inline the RGBA on every visual.  Ignition Fortress on Jetson otherwise
+       loses repeated named-material references while URDF fixed joints collapse. -->
+  <xacro:macro name="paint" params="color">
+    <material name="${color}">
+      <xacro:if value="${color == 'ep_white'}"><color rgba="0.92 0.95 0.98 1"/></xacro:if>
+      <xacro:if value="${color == 'ep_navy'}"><color rgba="0.035 0.12 0.28 1"/></xacro:if>
+      <xacro:if value="${color == 'ep_blue'}"><color rgba="0.00 0.55 1.00 1"/></xacro:if>
+      <xacro:if value="${color == 'ep_cyan'}"><color rgba="0.00 0.90 0.92 1"/></xacro:if>
+      <xacro:if value="${color == 'ep_orange'}"><color rgba="1.00 0.32 0.02 1"/></xacro:if>
+      <xacro:if value="${color == 'ep_yellow'}"><color rgba="1.00 0.82 0.04 1"/></xacro:if>
+      <xacro:if value="${color == 'ep_magenta'}"><color rgba="0.95 0.03 0.40 1"/></xacro:if>
+      <xacro:if value="${color == 'ep_graphite'}"><color rgba="0.10 0.14 0.20 1"/></xacro:if>
+      <xacro:if value="${color == 'ep_silver'}"><color rgba="0.62 0.69 0.76 1"/></xacro:if>
+    </material>
+  </xacro:macro>
+
+  <xacro:macro name="box_link" params="name size mass color:=ep_white origin_xyz:='0 0 0'">
+    <link name="${p}${name}">
+      <inertial><origin xyz="${origin_xyz}"/><mass value="${mass}"/>
+        <inertia ixx="${mass*(float(size.split()[1])**2+float(size.split()[2])**2)/12.0}" ixy="0" ixz="0"
+                 iyy="${mass*(float(size.split()[0])**2+float(size.split()[2])**2)/12.0}" iyz="0"
+                 izz="${mass*(float(size.split()[0])**2+float(size.split()[1])**2)/12.0}"/>
+      </inertial>
+      <visual><origin xyz="${origin_xyz}"/><geometry><box size="${size}"/></geometry><xacro:paint color="${color}"/></visual>
+      <collision><origin xyz="${origin_xyz}"/><geometry><box size="${size}"/></geometry></collision>
+    </link>
+  </xacro:macro>
+
+  <!-- Twin-rail arm links look closer to the EP arm while retaining one simple,
+       stable collision primitive.  End caps also make each joint easy to read. -->
+  <xacro:macro name="arm_link" params="name length radius mass color">
+    <link name="${p}${name}">
+      <inertial><origin xyz="${length/2} 0 0"/><mass value="${mass}"/>
+        <inertia ixx="${mass*radius*radius/2.0}" ixy="0" ixz="0"
+                 iyy="${mass*(3*radius*radius+length*length)/12.0}" iyz="0"
+                 izz="${mass*(3*radius*radius+length*length)/12.0}"/>
+      </inertial>
+      <visual name="left_rail"><origin xyz="${length/2} ${radius*0.52} 0" rpy="0 1.57079632679 0"/>
+        <geometry><cylinder radius="${radius*0.58}" length="${length}"/></geometry>
+        <xacro:paint color="${color}"/>
+      </visual>
+      <visual name="right_rail"><origin xyz="${length/2} ${-radius*0.52} 0" rpy="0 1.57079632679 0"/>
+        <geometry><cylinder radius="${radius*0.58}" length="${length}"/></geometry>
+        <xacro:paint color="${color}"/>
+      </visual>
+      <visual name="arm_spine"><origin xyz="${length/2} 0 0"/>
+        <geometry><box size="${length*0.78} ${radius*0.55} ${radius*0.72}"/></geometry>
+        <xacro:paint color="ep_white"/>
+      </visual>
+      <visual name="joint_cap"><origin xyz="0 0 0" rpy="1.57079632679 0 0"/>
+        <geometry><cylinder radius="${radius*1.28}" length="${radius*1.55}"/></geometry>
+        <xacro:paint color="ep_graphite"/>
+      </visual>
+      <visual name="joint_badge"><origin xyz="0 ${-radius*0.79} 0" rpy="1.57079632679 0 0"/>
+        <geometry><cylinder radius="${radius*0.68}" length="0.0025"/></geometry>
+        <xacro:paint color="ep_blue"/>
+      </visual>
+      <collision><origin xyz="${length/2} 0 0"/>
+        <geometry><box size="${length} ${2*radius} ${2*radius}"/></geometry>
+      </collision>
+    </link>
+  </xacro:macro>
+
+  <link name="${p}base_footprint"/>
+  <link name="${p}base_link">
+    <inertial><origin xyz="0 0 0.08"/><mass value="18.0"/>
+      <inertia ixx="0.1596" ixy="0" ixz="0" iyy="0.2328" iyz="0" izz="0.3078"/>
+    </inertial>
+    <visual name="chassis"><origin xyz="0 0 0.09"/><geometry><box size="0.36 0.28 0.13"/></geometry><xacro:paint color="ep_white"/></visual>
+    <visual name="lower_deck"><origin xyz="0 0 0.035"/><geometry><box size="0.38 0.27 0.035"/></geometry><xacro:paint color="ep_navy"/></visual>
+    <visual name="top_deck"><origin xyz="0 0 0.164"/><geometry><box size="0.29 0.22 0.018"/></geometry><xacro:paint color="ep_graphite"/></visual>
+    <visual name="front_bumper"><origin xyz="0.188 0 0.078"/><geometry><box size="0.025 0.24 0.055"/></geometry><xacro:paint color="ep_blue"/></visual>
+    <visual name="left_stripe"><origin xyz="0 0.141 0.105"/><geometry><box size="0.25 0.008 0.025"/></geometry><xacro:paint color="ep_cyan"/></visual>
+    <visual name="right_stripe"><origin xyz="0 -0.141 0.105"/><geometry><box size="0.25 0.008 0.025"/></geometry><xacro:paint color="ep_cyan"/></visual>
+    <!-- Four bright-hub wheel assemblies. -->
+    <xacro:macro name="wheel_visuals" params="id x y cap_y">
+      <visual name="wheel_${id}"><origin xyz="${x} ${y} 0.058" rpy="1.57079632679 0 0"/><geometry><cylinder radius="0.058" length="0.040"/></geometry><xacro:paint color="ep_graphite"/></visual>
+      <visual name="hub_${id}"><origin xyz="${x} ${y} 0.058" rpy="1.57079632679 0 0"/><geometry><cylinder radius="0.030" length="0.043"/></geometry><xacro:paint color="ep_blue"/></visual>
+      <visual name="hubcap_${id}"><origin xyz="${x} ${cap_y} 0.058" rpy="1.57079632679 0 0"/><geometry><cylinder radius="0.013" length="0.003"/></geometry><xacro:paint color="ep_silver"/></visual>
+    </xacro:macro>
+    <xacro:wheel_visuals id="front_left" x="0.125" y="0.155" cap_y="0.177"/>
+    <xacro:wheel_visuals id="rear_left" x="-0.125" y="0.155" cap_y="0.177"/>
+    <xacro:wheel_visuals id="front_right" x="0.125" y="-0.155" cap_y="-0.177"/>
+    <xacro:wheel_visuals id="rear_right" x="-0.125" y="-0.155" cap_y="-0.177"/>
+    <collision><origin xyz="0 0 0.08"/><geometry><box size="0.36 0.30 0.16"/></geometry></collision>
+  </link>
+  <joint name="${p}base_fixed_joint" type="fixed"><parent link="${p}base_footprint"/><child link="${p}base_link"/></joint>
+  <link name="${p}arm_mount_link">
+    <inertial><origin xyz="0 0 0.10"/><mass value="0.30"/><inertia ixx="0.00136" ixy="0" ixz="0" iyy="0.00125" iyz="0" izz="0.00061"/></inertial>
+    <visual name="turntable"><origin xyz="0 0 0.025"/><geometry><cylinder radius="0.068" length="0.050"/></geometry><xacro:paint color="ep_graphite"/></visual>
+    <visual name="mast"><origin xyz="0 0 0.105"/><geometry><box size="0.085 0.105 0.155"/></geometry><xacro:paint color="ep_navy"/></visual>
+    <visual name="mast_face"><origin xyz="-0.044 0 0.112"/><geometry><box size="0.006 0.074 0.095"/></geometry><xacro:paint color="ep_blue"/></visual>
+    <visual name="shoulder_housing"><origin xyz="0 0 0.160" rpy="1.57079632679 0 0"/><geometry><cylinder radius="0.047" length="0.135"/></geometry><xacro:paint color="ep_silver"/></visual>
+    <visual name="shoulder_cap"><origin xyz="0 -0.069 0.160" rpy="1.57079632679 0 0"/><geometry><cylinder radius="0.034" length="0.004"/></geometry><xacro:paint color="ep_orange"/></visual>
+    <collision><origin xyz="0 0 0.10"/><geometry><box size="0.10 0.12 0.20"/></geometry></collision>
+  </link>
+  <joint name="${p}arm_mount_joint" type="fixed"><parent link="${p}base_link"/><child link="${p}arm_mount_link"/><origin xyz="0.09 0 0.16"/></joint>
+
+  <xacro:arm_link name="upper_arm_link" length="${link1_length}" radius="0.022" mass="0.056" color="ep_blue"/>
+  <joint name="${p}shoulder_joint" type="revolute">
+    <parent link="${p}arm_mount_link"/><child link="${p}upper_arm_link"/><origin xyz="0 0 0.16"/><axis xyz="0 1 0"/>
+    <limit lower="-1.75" upper="0.55" effort="12.0" velocity="1.5"/><dynamics damping="0.30" friction="0.08"/>
+  </joint>
+
+  <xacro:arm_link name="forearm_link" length="${link2_length}" radius="0.020" mass="0.080" color="ep_silver"/>
+  <joint name="${p}elbow_joint" type="revolute">
+    <parent link="${p}upper_arm_link"/><child link="${p}forearm_link"/><origin xyz="${link1_length} 0 0"/><axis xyz="0 1 0"/>
+    <limit lower="-1.35" upper="2.30" effort="10.0" velocity="1.5"/><dynamics damping="0.25" friction="0.06"/>
+  </joint>
+
+  <link name="${p}gripper_base_link">
+    <inertial><origin xyz="0.030 0 0"/><mass value="0.15"/><inertia ixx="0.0000625" ixy="0" ixz="0" iyy="0.0000763" iyz="0" izz="0.0000763"/></inertial>
+    <visual name="wrist"><origin xyz="0 0 0" rpy="0 1.57079632679 0"/><geometry><cylinder radius="0.030" length="0.025"/></geometry><xacro:paint color="ep_graphite"/></visual>
+    <visual name="palm"><origin xyz="0.035 0 0"/><geometry><box size="0.055 0.052 0.045"/></geometry><xacro:paint color="ep_orange"/></visual>
+    <visual name="palm_face"><origin xyz="0.064 0 0"/><geometry><box size="0.006 0.044 0.034"/></geometry><xacro:paint color="ep_graphite"/></visual>
+    <collision><origin xyz="0.030 0 0"/><geometry><box size="0.060 0.050 0.050"/></geometry></collision>
+  </link>
+  <joint name="${p}wrist_fixed_joint" type="fixed"><parent link="${p}forearm_link"/><child link="${p}gripper_base_link"/><origin xyz="${link2_length} 0 0"/></joint>
+
+  <xacro:box_link name="left_finger_link" size="0.065 0.012 0.022" mass="0.025" color="ep_graphite" origin_xyz="0.0325 0 0"/>
+  <joint name="${p}left_finger_joint" type="prismatic">
+    <parent link="${p}gripper_base_link"/><child link="${p}left_finger_link"/><origin xyz="0.045 0.015 0"/><axis xyz="0 1 0"/>
+    <limit lower="0.0" upper="${finger_travel}" effort="5.0" velocity="0.10"/><dynamics damping="0.6" friction="0.2"/>
+  </joint>
+  <xacro:box_link name="right_finger_link" size="0.065 0.012 0.022" mass="0.025" color="ep_graphite" origin_xyz="0.0325 0 0"/>
+  <joint name="${p}right_finger_joint" type="prismatic">
+    <parent link="${p}gripper_base_link"/><child link="${p}right_finger_link"/><origin xyz="0.045 -0.015 0"/><axis xyz="0 1 0"/>
+    <limit lower="-${finger_travel}" upper="0.0" effort="5.0" velocity="0.10"/><dynamics damping="0.6" friction="0.2"/>
+  </joint>
+
+  <link name="${p}tool0"/><joint name="${p}tool0_joint" type="fixed"><parent link="${p}gripper_base_link"/><child link="${p}tool0"/><origin xyz="0.105 0 0"/></joint>
+  <link name="${p}gripper_tcp"/><joint name="${p}tcp_joint" type="fixed"><parent link="${p}tool0"/><child link="${p}gripper_tcp"/></joint>
+  <link name="${p}camera_link"/><joint name="${p}camera_joint" type="fixed"><parent link="${p}arm_mount_link"/><child link="${p}camera_link"/><origin xyz="0.03 0 0.225"/></joint>
+  <link name="${p}camera_optical_frame"/><joint name="${p}camera_optical_joint" type="fixed"><parent link="${p}camera_link"/><child link="${p}camera_optical_frame"/><origin rpy="-1.570796 0 -1.570796"/></joint>
+
+  <ros2_control name="RoboMasterEPSystem" type="system">
+    <hardware>
+      <xacro:if value="$(arg use_gazebo)"><plugin>gz_ros2_control/GazeboSimSystem</plugin></xacro:if>
+      <xacro:unless value="$(arg use_gazebo)"><plugin>mock_components/GenericSystem</plugin><param name="calculate_dynamics">true</param></xacro:unless>
+    </hardware>
+    <joint name="${p}shoulder_joint"><command_interface name="position"/><state_interface name="position"><param name="initial_value">-0.35</param></state_interface><state_interface name="velocity"/></joint>
+    <joint name="${p}elbow_joint"><command_interface name="position"/><state_interface name="position"><param name="initial_value">0.70</param></state_interface><state_interface name="velocity"/></joint>
+    <joint name="${p}left_finger_joint"><command_interface name="position"/><state_interface name="position"><param name="initial_value">0.041</param></state_interface><state_interface name="velocity"/></joint>
+    <joint name="${p}right_finger_joint"><command_interface name="position"/><state_interface name="position"><param name="initial_value">-0.041</param></state_interface><state_interface name="velocity"/></joint>
+  </ros2_control>
+
+  <xacro:if value="$(arg use_gazebo)">
+    <gazebo><plugin filename="gz_ros2_control-system" name="gz_ros2_control::GazeboSimROS2ControlPlugin"><parameters>$(arg controllers_file)</parameters></plugin></gazebo>
+  </xacro:if>
+</robot>

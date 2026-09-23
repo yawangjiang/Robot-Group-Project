@@ -1,0 +1,10 @@
+moveit_fake_controller_manager:
+  controller_names: [fake_arm_controller, fake_gripper_controller]
+  fake_arm_controller:
+    type: interpolate
+    joints: [shoulder_joint, elbow_joint]
+  fake_gripper_controller:
+    type: interpolate
+    joints: [left_finger_joint, right_finger_joint]
+initial: [home, open]
+moveit_controller_manager: moveit_fake_controller_manager/MoveItFakeControllerManager
