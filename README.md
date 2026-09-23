@@ -1,14 +1,12 @@
-# RoboMaster 机器人集成小组项目
+# 机器人集成小组项目
 
 本仓库用于统一管理机器人集成小组的课程实验、代码、报告与演示材料。
 
 ## 项目结构
 
-- `projects/experiment-1/`：Experiment 1，目标检测与识别相关工作。
+- `projects/experiment-1/`：Lab1，目标检测与识别相关工作。
 - `projects/lab2/`：Lab 2，RoboMaster EP ROS 2 仿真与抓取放置任务。
-- `projects/project-3/`：第三个项目的预留目录，后续提交到此处。
-
-两个已完成项目从原 GitHub 仓库导入，并保留各自的提交历史。原仓库暂时保留，作为兼容入口与备份。
+- `projects/project-3/`：Lab3，
 
 ## 协作约定
 
