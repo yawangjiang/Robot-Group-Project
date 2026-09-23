@@ -1,0 +1,4 @@
+# Lab 3 binary assets use Git LFS. The model exceeds GitHub's regular
+# 100 MB single-file limit, and the video should not bloat normal Git history.
+projects/lab3/*.pt filter=lfs diff=lfs merge=lfs -text
+projects/lab3/*.mp4 filter=lfs diff=lfs merge=lfs -text

@@ -7,7 +7,7 @@
 - Run the relevant project tests before committing when they are available.
 - Never commit secrets, tokens, private keys, device credentials, generated build output, caches, or local logs.
 - Do not force-push, delete branches, change repository visibility, or rewrite imported history without explicit approval.
-- Preserve the existing histories under `projects/experiment-1/` and `projects/lab2/`.
+- Preserve the imported histories under `projects/lab1/` and `projects/lab2/`.
 
 ## Code review rules
 
