@@ -4,11 +4,9 @@
 
 ## 项目结构
 
-- `projects/lab1/`：Lab 1（原 Experiment 1），目标检测与识别相关工作。
+- `projects/lab1/`：Lab 1，目标检测与识别相关工作。
 - `projects/lab2/`：Lab 2，RoboMaster EP ROS 2 仿真与抓取放置任务。
 - `projects/lab3/`：Lab 3，RoboMaster 六宫格分拣任务。
-
-Lab 1 和 Lab 2 从原 GitHub 仓库导入并保留各自的提交历史；Lab 3 直接纳入本总仓库。原仓库暂时保留，作为兼容入口与备份。
 
 ## 协作约定
 
