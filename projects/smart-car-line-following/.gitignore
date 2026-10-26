@@ -1,0 +1,21 @@
+# Keil build output
+Objects/
+Listings/
+DebugConfig/
+*.uvguix.*
+*.axf
+*.crf
+*.d
+*.dep
+*.lnp
+*.lst
+*.map
+*.o
+*.sct
+*.build_log.htm
+
+# Local editor and OS files
+.idea/
+.vscode/
+Thumbs.db
+.DS_Store
