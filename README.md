@@ -7,6 +7,7 @@
 - `projects/lab1/`：Lab 1，目标检测与识别相关工作。
 - `projects/lab2/`：Lab 2，RoboMaster EP ROS 2 仿真与抓取放置任务。
 - `projects/lab3/`：Lab 3，RoboMaster 六宫格分拣任务。
+- `projects/smart-car-line-following/`：STM32 八路光电传感器智能车循迹项目，包含固件、PCB/原理图、机械支架和实物照片。
 
 ## 协作约定
 
