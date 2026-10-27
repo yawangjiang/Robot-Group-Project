@@ -36,19 +36,3 @@ tmp/
 temp/
 output/
 snapshots/
-
-# Keil MDK generated output and per-user state
-**/Objects/
-**/Listings/
-**/DebugConfig/
-*.uvguix.*
-*.axf
-*.crf
-*.d
-*.dep
-*.lnp
-*.lst
-*.map
-*.o
-*.sct
-*.build_log.htm
